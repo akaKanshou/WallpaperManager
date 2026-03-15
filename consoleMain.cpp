@@ -62,10 +62,11 @@ void runApplication() {
 
     bool continueApp = true;
 
+    auto fittingOptions = ImgHandler::readFittingOptions();
+
     do {
         std::vector<MonitorManager::monitorData> Monitors;
         MonitorManager::getMonitors(Monitors);
-        auto fittingOptions = ImgHandler::readFittingOptions();
 
         showMonitorOptions(Monitors);
 
@@ -93,7 +94,7 @@ void runApplication() {
         }
 
         sample.fitResize(Monitors[monitorIndex - 1],
-                         fittingIndex | ImgHandler::AlignTop);
+                         fittingIndex | ImgHandler::AlignBottom);
 
         std::cout << "Enter Y to continue, or any other key to exit: ";
         std::string continueString;
