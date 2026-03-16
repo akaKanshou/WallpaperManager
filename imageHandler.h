@@ -19,7 +19,9 @@ enum fittingOption {
     AlignLeft = 0x0040,
     AlignRight = 0x0080,
     AlignCenterVertical = 0x0100,
-    AlignCenterHorizontal = 0x0200
+    AlignCenterHorizontal = 0x0200,
+    StrechX = 0x0400,
+    StrechY = 0x0800,
 };
 
 class Img {
@@ -31,11 +33,14 @@ class Img {
     Img();
     Img(wchar_t *imgPath);
     Img(int w, int h, int n);
+
     ~Img();
 
     void fitResize(MonitorManager::monitorData &Monitor, int Fit);
 
-    bool createBM(Img &source, int xOffset, int yOffset, int tbHeight);
+    bool createBM(Img &source, int xOffset, int yOffset);
+
+    bool createBMResize(Img &source, int nWidth, int nHeight);
 
     void copyBit(int a, int b, Img &source, int x, int y);
 

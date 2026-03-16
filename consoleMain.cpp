@@ -34,9 +34,10 @@ void showMonitorOptions(std::vector<MonitorManager::monitorData> &Monitors) {
     }
 }
 
-void showFittingOptions(std::vector<std::string> &fittingOptions) {
-    for (auto &option : fittingOptions) {
-        std::cout << option;
+void showFittingOptions(int from, int to) {
+    static auto fittingOptions = ImgHandler::readFittingOptions();
+    for (int i = from; i <= to; i++) {
+        std::cout << fittingOptions[i];
     }
 }
 
@@ -62,8 +63,6 @@ void runApplication() {
 
     bool continueApp = true;
 
-    auto fittingOptions = ImgHandler::readFittingOptions();
-
     do {
         std::vector<MonitorManager::monitorData> Monitors;
         MonitorManager::getMonitors(Monitors);
@@ -78,12 +77,15 @@ void runApplication() {
             monitorIndex = getValidInput();
         }
 
-        std::cout << "\nChoose a wallpaper.\n";
+        std::cout << "\nChoose a wallpaper: ";
 
-        ImgHandler::Img sample(ImgHandler::getWallpaper());
+        COMHelper::COFreePointer<LPWSTR> pWallpaperPath(
+            ImgHandler::getWallpaper());
+        std::wcout << pWallpaperPath.get() << "\n\n";
+        ImgHandler::Img sample(pWallpaperPath.get());
 
         std::cout << "Fitting options: \n";
-        showFittingOptions(fittingOptions);
+        showFittingOptions(0, 5);
 
         std::cout << "Enter fitting option index: ";
         UINT fittingIndex = getValidInput();
@@ -93,10 +95,69 @@ void runApplication() {
             fittingIndex = getValidInput();
         }
 
-        sample.fitResize(Monitors[monitorIndex - 1],
-                         fittingIndex | ImgHandler::AlignBottom);
+        fittingIndex = 1 << (fittingIndex - 1);
 
-        std::cout << "Enter Y to continue, or any other key to exit: ";
+        if (fittingIndex == ImgHandler::Fill) {
+            std::cout << "Alignment Options: \n";
+            showFittingOptions(8, 10);
+
+            std::cout << "Enter alignment option index: ";
+            UINT alignmentOption = getValidInput();
+
+            while ((alignmentOption < 1) || (alignmentOption > 3)) {
+                std::cout << "Invalid index. Try again: ";
+                alignmentOption = getValidInput();
+            }
+
+            if (alignmentOption == 1) {
+                fittingIndex |= ImgHandler::AlignTop;
+            } else if (alignmentOption == 2) {
+                fittingIndex |= ImgHandler::AlignBottom;
+            } else {
+                fittingIndex |= ImgHandler::AlignCenterVertical;
+            }
+
+        } else if (fittingIndex == ImgHandler::Fit) {
+            std::cout << "Alignment Options: \n";
+            showFittingOptions(11, 13);
+
+            std::cout << "Enter alignment option index: ";
+            UINT alignmentOption = getValidInput();
+
+            while ((alignmentOption < 1) || (alignmentOption > 3)) {
+                std::cout << "Invalid index. Try again: ";
+                alignmentOption = getValidInput();
+            }
+
+            if (alignmentOption == 1) {
+                fittingIndex |= ImgHandler::AlignLeft;
+            } else if (alignmentOption == 2) {
+                fittingIndex |= ImgHandler::AlignRight;
+            } else {
+                fittingIndex |= ImgHandler::AlignCenterHorizontal;
+            }
+        } else if (fittingIndex == ImgHandler::Strech) {
+            std::cout << "Alignment Options: \n";
+            showFittingOptions(14, 15);
+
+            std::cout << "Enter alignment option index: ";
+            UINT alignmentOption = getValidInput();
+
+            while ((alignmentOption < 1) || (alignmentOption > 2)) {
+                std::cout << "Invalid index. Try again: ";
+                alignmentOption = getValidInput();
+            }
+
+            if (alignmentOption == 1) {
+                fittingIndex |= ImgHandler::StrechX;
+            } else if (alignmentOption == 2) {
+                fittingIndex |= ImgHandler::StrechY;
+            }
+        }
+
+        sample.fitResize(Monitors[monitorIndex - 1], fittingIndex);
+
+        std::cout << "\nEnter Y to continue, or any other key to exit: ";
         std::string continueString;
         std::cin >> continueString;
         if ((continueString != "Y") && (continueString != "y")) {
