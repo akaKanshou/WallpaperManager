@@ -51,7 +51,6 @@ bool ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
             channels);
 
         if (imgWithTBPadding.createBM(*this, 0, yOffset)) {
-            // imgWithTBPadding.writeToPng(OutputDir.c_str());
             this->swap(imgWithTBPadding);
             return true;
         } else {
@@ -79,8 +78,7 @@ bool ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
         }
 
         Img imgWithTBPadding(imageWidth, imageHeight, channels);
-
-        if (imgWithTBPadding.createBMResize(*this, xOffset, 0)) {
+        if (imgWithTBPadding.createBM(*this, xOffset, 0)) {
             this->swap(imgWithTBPadding);
             return true;
         } else {
