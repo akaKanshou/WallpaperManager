@@ -1,0 +1,14 @@
+1. Fit-Width:
+	Shrinks or enlarges your photo to fit your monitor's width.
+2. Fit-Height:
+	Shrinks or enlarges your photo to fit your monitor's height.
+3. Strech:
+	Streches or compresses your photo to fit your monitor's aspect ratio.
+1. Align to Top: Apply padding/crop to the bottom of the image.
+2. Align to Bottom: Apply padding/crop to the top of the image.
+3. Align to Center: Center the image vertically.
+1. Align to Left: Apply padding/crop to the right of the image.
+2. Align to Right: Apply padding/crop to the left of the image.
+3. Align to Center: Center the image horizontally.
+1. Strech width to match the screen's aspect ratio.
+2. Strech height to to match the screen's aspect ratio.

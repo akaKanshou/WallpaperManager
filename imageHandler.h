@@ -36,7 +36,7 @@ class Img {
 
     ~Img();
 
-    void fitResize(MonitorManager::monitorData &Monitor, int Fit);
+    bool fitResize(MonitorManager::monitorData &Monitor, int Fit);
 
     bool createBM(Img &source, int xOffset, int yOffset);
 
@@ -44,10 +44,14 @@ class Img {
 
     void copyBit(int a, int b, Img &source, int x, int y);
 
-    bool writeToPng(const char *filename);
+    bool writeToPng(LPWSTR fileName);
+
+    void swap(Img &other);
 };
 
 LPWSTR getWallpaper();
+
+LPWSTR getSaveLocation();
 
 std::vector<std::string> readFittingOptions();
 } // namespace ImgHandler

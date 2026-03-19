@@ -17,12 +17,9 @@
 #include "stb_image_resize2.h"
 #include "stb_image_write.h"
 
-static std::string
-    OutputDir("C:"
-              "\\Users\\sidda\\Desktop\\repo\\winAPI\\WallpaperManager"
-              "\\output\\output.png");
+static std::string OutputDir("\\output.png");
 
-void ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
+bool ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
     if (Fit & Fill) {
         double scaling = (double)width / Monitor.FullArea[0];
         int taskbarHeight =
@@ -54,7 +51,12 @@ void ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
             channels);
 
         if (imgWithTBPadding.createBM(*this, 0, yOffset)) {
-            imgWithTBPadding.writeToPng(OutputDir.c_str());
+            // imgWithTBPadding.writeToPng(OutputDir.c_str());
+            this->swap(imgWithTBPadding);
+            return true;
+        } else {
+            bitmap = NULL;
+            return false;
         }
     }
 
@@ -79,7 +81,11 @@ void ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
         Img imgWithTBPadding(imageWidth, imageHeight, channels);
 
         if (imgWithTBPadding.createBMResize(*this, xOffset, 0)) {
-            imgWithTBPadding.writeToPng(OutputDir.c_str());
+            this->swap(imgWithTBPadding);
+            return true;
+        } else {
+            bitmap = NULL;
+            return false;
         }
     }
 
@@ -95,8 +101,11 @@ void ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
 
             if (imgWithTBPadding.createBMResize(*this, width,
                                                 imageHeight - taskbarHeight)) {
-
-                imgWithTBPadding.writeToPng(OutputDir.c_str());
+                this->swap(imgWithTBPadding);
+                return true;
+            } else {
+                bitmap = NULL;
+                return false;
             }
         }
 
@@ -112,10 +121,16 @@ void ImgHandler::Img::fitResize(MonitorManager::monitorData &Monitor, int Fit) {
             Img imgWithTBPadding(imageWidth, imageHeight, channels);
 
             if (imgWithTBPadding.createBMResize(*this, imageWidth, height)) {
-                imgWithTBPadding.writeToPng(OutputDir.c_str());
+                this->swap(imgWithTBPadding);
+                return true;
+            } else {
+                bitmap = NULL;
+                return false;
             }
         }
     }
+
+    return false;
 }
 
 ImgHandler::Img::Img() : bitmap(NULL) {}
@@ -195,9 +210,26 @@ void ImgHandler::Img::copyBit(int a, int b, Img &source, int x, int y) {
     return;
 }
 
-bool ImgHandler::Img::writeToPng(const char *filename) {
-    return stbi_write_png(filename, width, height, channels, (void *)bitmap,
-                          width * channels);
+bool ImgHandler::Img::writeToPng(LPWSTR fileName) {
+    size_t size = std::wcslen(fileName) + 1;
+
+    char *UTFFileName = new char[size];
+
+    stbi_convert_wchar_to_utf8(UTFFileName, size, fileName);
+
+    bool result = stbi_write_png(UTFFileName, width, height, channels,
+                                 (void *)bitmap, width * channels);
+
+    delete[] UTFFileName;
+
+    return result;
+}
+
+void ImgHandler::Img::swap(Img &other) {
+    std::swap(this->bitmap, other.bitmap);
+    std::swap(this->width, other.width);
+    std::swap(this->height, other.height);
+    std::swap(this->channels, other.channels);
 }
 
 LPWSTR ImgHandler::getWallpaper() {
@@ -205,6 +237,14 @@ LPWSTR ImgHandler::getWallpaper() {
     COMHelper::getHResult(CoCreateInstance(
         CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog,
         reinterpret_cast<void **>(&spFileDialogue)));
+
+    COMDLG_FILTERSPEC allowedFileTypes;
+    allowedFileTypes.pszName = L"Image Files (*.png, *.jpg)";
+    allowedFileTypes.pszSpec = L"*.png;*.jpg";
+
+    spFileDialogue->SetFileTypes(1, &allowedFileTypes);
+    COMHelper::getHResult(spFileDialogue->SetOkButtonLabel(L"Load"));
+    COMHelper::getHResult(spFileDialogue->SetTitle(L"Select input image"));
 
     LPWSTR wallpaperPath;
 
@@ -232,30 +272,56 @@ LPWSTR ImgHandler::getWallpaper() {
     return wallpaperPath;
 }
 
+LPWSTR ImgHandler::getSaveLocation() {
+    COMHelper::CORleasePointer<IFileSaveDialog> pSaveDialogue;
+
+    COMHelper::getHResult(CoCreateInstance(
+        CLSID_FileSaveDialog, NULL, CLSCTX_ALL, IID_IFileSaveDialog,
+        reinterpret_cast<void **>(&pSaveDialogue)));
+
+    COMDLG_FILTERSPEC allowedFileTypes;
+    allowedFileTypes.pszName = L"Image Files (*.png)";
+    allowedFileTypes.pszSpec = L"*.png;";
+
+    COMHelper::getHResult(pSaveDialogue->SetFileTypes(1, &allowedFileTypes));
+    COMHelper::getHResult(pSaveDialogue->SetFileName(L"output.png"));
+    COMHelper::getHResult(pSaveDialogue->SetOkButtonLabel(L"Save"));
+    COMHelper::getHResult(pSaveDialogue->SetTitle(L"Select output location"));
+
+    if (HRESULT hr = pSaveDialogue->Show(NULL);
+        hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+
+        return NULL;
+    } else {
+        COMHelper::getHResult(hr);
+
+        COMHelper::CORleasePointer<IShellItem> pItem;
+        COMHelper::getHResult(pSaveDialogue->GetResult(&pItem));
+
+        LPWSTR pSaveLocation{NULL};
+
+        COMHelper::getHResult(
+            pItem->GetDisplayName(SIGDN_FILESYSPATH, &pSaveLocation));
+
+        return pSaveLocation;
+    }
+}
+
 std::vector<std::string> ImgHandler::readFittingOptions() {
     std::fstream file("C:"
                       "\\Users\\sidda\\Desktop\\repo\\winAPI\\WallpaperManager"
-                      "\\fittingOptions."
-                      "dat",
-                      std::ios::in | std::ios::binary);
+                      "\\fittingOptions.txt",
+                      std::ios::in);
 
-    std::vector<std::string> result;
+    std::vector<std::string> result(1);
 
-    file.seekg(0, file.end);
-    int fileEnd = file.tellg();
-    file.seekg(0, file.beg);
-
-    while (file.tellg() != fileEnd) {
-        int size;
-        file.read(reinterpret_cast<char *>(&size), sizeof(size));
-
-        char *s = new char[size];
-        file.read(s, size);
-
-        result.emplace_back(s);
+    while (std::getline(file, result.back())) {
+        result.back().push_back('\n');
+        result.emplace_back();
     }
 
     file.close();
 
+    result.pop_back();
     return result;
 }

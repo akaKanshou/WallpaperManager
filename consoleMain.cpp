@@ -99,7 +99,7 @@ void runApplication() {
 
         if (fittingIndex == ImgHandler::Fill) {
             std::cout << "Alignment Options: \n";
-            showFittingOptions(8, 10);
+            showFittingOptions(6, 8);
 
             std::cout << "Enter alignment option index: ";
             UINT alignmentOption = getValidInput();
@@ -119,7 +119,7 @@ void runApplication() {
 
         } else if (fittingIndex == ImgHandler::Fit) {
             std::cout << "Alignment Options: \n";
-            showFittingOptions(11, 13);
+            showFittingOptions(9, 11);
 
             std::cout << "Enter alignment option index: ";
             UINT alignmentOption = getValidInput();
@@ -138,7 +138,7 @@ void runApplication() {
             }
         } else if (fittingIndex == ImgHandler::Strech) {
             std::cout << "Alignment Options: \n";
-            showFittingOptions(14, 15);
+            showFittingOptions(12, 13);
 
             std::cout << "Enter alignment option index: ";
             UINT alignmentOption = getValidInput();
@@ -155,7 +155,21 @@ void runApplication() {
             }
         }
 
-        sample.fitResize(Monitors[monitorIndex - 1], fittingIndex);
+        if (sample.fitResize(Monitors[monitorIndex - 1], fittingIndex)) {
+            COMHelper::COFreePointer<LPWSTR> saveFileLocation(
+                ImgHandler::getSaveLocation());
+            if (saveFileLocation.get()) {
+                if (sample.writeToPng(saveFileLocation.get())) {
+                    std::cout << "Operation Successful.\n";
+                } else {
+                    std::cout << "Operation Failed.\n";
+                }
+            } else {
+                std::cout << "Operation Cancelled\n";
+            }
+        } else {
+            std::cout << "Error: Operation Failed\n";
+        }
 
         std::cout << "\nEnter Y to continue, or any other key to exit: ";
         std::string continueString;
